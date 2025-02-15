@@ -39,7 +39,6 @@ class _DrawBadgeState extends State<DrawBadge> {
     super.dispose();
   }
 
-  
   void _resetPortraitOrientation() {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -57,12 +56,12 @@ class _DrawBadgeState extends State<DrawBadge> {
   @override
   Widget build(BuildContext context) {
     FileHelper fileHelper = FileHelper();
-  return WillPopScope(
-    onWillPop: () async {
-      _resetPortraitOrientation();
-      return true; // Allows back navigation
-    },
-    child: CommonScaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        _resetPortraitOrientation();
+        return true; // Allows back navigation
+      },
+      child: CommonScaffold(
         index: 1,
         title: 'BadgeMagic',
         body: SingleChildScrollView(
@@ -180,10 +179,11 @@ class _DrawBadgeState extends State<DrawBadge> {
                                 : widget.isSavedClipart!
                                     ? fileHelper.updateClipart(
                                         widget.filename!, badgeGrid)
-                                    : fileHelper
-                                        .saveImage(drawToggle.getDrawViewGrid());
+                                    : fileHelper.saveImage(
+                                        drawToggle.getDrawViewGrid());
                             fileHelper.generateClipartCache();
-                            ToastUtils().showToast("Clipart Saved Successfully");
+                            ToastUtils()
+                                .showToast("Clipart Saved Successfully");
                           },
                           child: const Column(
                             children: [
@@ -191,7 +191,8 @@ class _DrawBadgeState extends State<DrawBadge> {
                                 Icons.save,
                                 color: Colors.black,
                               ),
-                              Text('Save', style: TextStyle(color: Colors.black))
+                              Text('Save',
+                                  style: TextStyle(color: Colors.black))
                             ],
                           ),
                         ),
