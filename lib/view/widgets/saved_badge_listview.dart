@@ -22,15 +22,17 @@ class BadgeListView extends StatelessWidget {
         } else {
           List<MapEntry<String, Map<String, dynamic>>> savedBadges =
               snapshot.data!;
-          return ListView.builder(
-            itemCount: savedBadges.length,
-            itemBuilder: (context, index) {
-              return SaveBadgeCard(
-                badgeData: savedBadges[index],
-                refreshBadgesCallback:
-                    refreshBadgesCallback, // Pass callback to card
-              );
-            },
+          return Expanded(
+            child: ListView.builder(
+              itemCount: savedBadges.length,
+              itemBuilder: (context, index) {
+                return SaveBadgeCard(
+                  badgeData: savedBadges[index],
+                  refreshBadgesCallback:
+                      refreshBadgesCallback, // Pass callback to card
+                );
+              },
+            ),
           );
         }
       },
