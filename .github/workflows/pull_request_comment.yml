@@ -88,7 +88,7 @@ jobs:
           for file in ../screenshots/*; do
             if [[ -f "$file" ]]; then
               filename=$(basename "$file")
-              cp -f "$file" "./${{ steps.fetch-pr-number.outputs.pr_number }}_${filename}"
+              cp -f "$file" "./${{ steps.fetch-pr-number.outputs.pr_number }}-${filename}"
             fi
           done
           
@@ -105,6 +105,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+            const path = require('path');
+
             var issue_number = ${{ steps.fetch-pr-number.outputs.pr_number }};
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -134,72 +137,47 @@ jobs:
             
             var statusText = `Build successful. APKs to test: ${artifact_url}.`;
 
-            var androidScreenshots = `
-            <table>
-              <tr>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_Pixel_6-1_home_screen.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_Pixel_6-2_text_badge.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_Pixel_6-3_emoji_badge.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_Pixel_6-4_inverted_emoji_badge.png?raw=true" width="1080"/></td>
-              </tr>
-              <tr>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_Pixel_6-5_saved_badges.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_Pixel_6-6_saved_badges_clicked.png?raw=true" width="1080"/></td>
-                <td colspan="2">
-                  <img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_Pixel_6-7_draw_badge.png?raw=true" width="2146"/>
-                </td>
-              </tr>
-            </table>
-            `;
+            const screenshotsDir = 'pr-screenshots';
+            let deviceScreenshots = {};
 
-            var iPhoneScreenshots = `
-            <table>
-              <tr>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPhone_16_Pro_Max-1_home_screen.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPhone_16_Pro_Max-2_text_badge.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPhone_16_Pro_Max-3_emoji_badge.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPhone_16_Pro_Max-4_inverted_emoji_badge.png?raw=true" width="1080"/></td>
-              </tr>
-              <tr>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPhone_16_Pro_Max-5_saved_badges.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPhone_16_Pro_Max-6_saved_badges_clicked.png?raw=true" width="1080"/></td>
-                <td colspan="2">
-                  <img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPhone_16_Pro_Max-7_draw_badge.png?raw=true" width="2146"/>
-                </td>
-              </tr>
-            </table>
-            `;
+            if (fs.existsSync(screenshotsDir)) {
+              const files = fs.readdirSync(screenshotsDir);
 
-            var iPadScreenshots = `
-            <table>
-              <tr>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPad_Pro_13-inch_(M4)-1_home_screen.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPad_Pro_13-inch_(M4)-2_text_badge.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPad_Pro_13-inch_(M4)-3_emoji_badge.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPad_Pro_13-inch_(M4)-4_inverted_emoji_badge.png?raw=true" width="1080"/></td>
-              </tr>
-              <tr>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPad_Pro_13-inch_(M4)-5_saved_badges.png?raw=true" width="1080"/></td>
-                <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPad_Pro_13-inch_(M4)-6_saved_badges_clicked.png?raw=true" width="1080"/></td>
-                <td colspan="2">
-                  <img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${issue_number}_iPad_Pro_13-inch_(M4)-7_draw_badge.png?raw=true" width="2146"/>
-                </td>
-              </tr>
-            </table>
-            `;
+              files.forEach(file => {
+                const match = file.match(new RegExp(`^${issue_number}-(.+?)-.+\\.png$`));
+                if (match) {
+                  const deviceName = match[1];
+                  if (!deviceScreenshots[deviceName]) {
+                    deviceScreenshots[deviceName] = [];
+                  }
+                  deviceScreenshots[deviceName].push(file);
+                }
+              });
+            }
+
+            var screenshotsHtml = Object.entries(deviceScreenshots).map(([device, images]) => {
+              images.sort();
+              let tableRows = "";
+              for (let i = 0; i < images.length; i += 4) {
+                tableRows += `
+                <tr>
+                  <td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${images[i]}?raw=true" width="1080"/></td>
+                  ${images[i + 1] ? `<td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${images[i + 1]}?raw=true" width="1080"/></td>` : ""}
+                  ${images[i + 2] ? `<td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${images[i + 2]}?raw=true" width="1080"/></td>` : ""}
+                  ${images[i + 3] ? `<td><img src="https://github.com/fossasia/badgemagic-app/blob/pr-screenshots/${images[i + 3]}?raw=true" width="1080"/></td>` : ""}
+                </tr>`;
+              }
+              return `
+              ## Screenshots (${device.replace(/_/g, " ")})
+              <table>${tableRows}</table>
+              `;
+            }).join("\n");
 
             const body = `
             ## Build Status
             ${statusText}
 
-            ## Screenshots (Android)
-            ${androidScreenshots}
-
-            ## Screenshots (iPhone)
-            ${iPhoneScreenshots}
-
-            ## Screenshots (iPad)
-            ${iPadScreenshots}
+            ${screenshotsHtml}
             `;
             
             if (comment_id) {
